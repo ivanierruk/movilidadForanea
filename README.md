@@ -125,8 +125,9 @@ Each script generates a `.log` file in the output directory with warnings and er
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+This project is licensed under the GNU General Public License v3.0 — see the LICENSE file for the full text.
 
 ## Author
 
-John Do — UNAM IIEc
+- Ivan Espinosa - UNAM IIEc
+- Victor Reyes - UNAM IIEc
