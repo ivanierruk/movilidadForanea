@@ -27,7 +27,7 @@ options = Options()
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 # Set the output path for files 
-path_out = "/home/endv/Documents/IIEc UNAM/IIEc Proyectos/5_ProyectoBuses_Victor/Scripts _final Viktor _20mar26/output/"
+path_out = "/home/output/"
 
 # ================= LOGGER ======================
 # Configure logging at the module level

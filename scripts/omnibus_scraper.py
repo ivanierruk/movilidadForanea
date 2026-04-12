@@ -18,7 +18,7 @@ import hashlib
 import logging
 
 # Set the output path for files
-path_out = "/home/endv/Documents/IIEc UNAM/IIEc Proyectos/5_ProyectoBuses_Victor/Scripts _final Viktor _20mar26/output/Omnibus/"
+path_out = "/home/output/"
 
 # ================= LOGGER ======================
 # Configure logging at the module level
