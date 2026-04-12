@@ -1,6 +1,6 @@
 # Intercity Mobility & Hotel Geolocation — Web Scraping System
 
-Automated data extraction system for intercity bus travel and hotel geolocation in Mexico. The system collects route information (schedules, fares, terminals) from four bus platforms and georeferenced hotel coordinates from Booking.com.
+Automated data extraction system for intercity bus travel and hotel geolocation in Mexico. The system collects route information (schedules, fares, terminals) from four bus platforms and georeferenced hotel coordinates.
 
 Developed as part of a research project at **UNAM - IIEc** (Instituto de Investigaciones Económicas).
 
@@ -110,38 +110,7 @@ Scripts run in **visible (non-headless) mode** — a Chrome window will open and
 
 ## Output
 
-### Mobility module (ADO, Omnibus, ClickBus, BusBud)
-
-Each consolidated file contains trip records with the following core fields:
-
-| Field | Description |
-|---|---|
-| `Origin General` | Control field: query city from the input list |
-| `Origin` | Origin city or terminal as shown on the platform |
-| `Destination` | Destination city or terminal as shown on the platform |
-| `Departure Time` | Departure time |
-| `Arrival Time` | Arrival time |
-| `Price` | Fare for the queried date |
-| `Travel Date` | Travel date (YYYY-MM-DD) |
-| `Scraping Date` | Extraction timestamp |
-| `id` | Unique identifier (MD5 hash) |
-
-Additional fields by platform: ADO includes `Day Offset`; ClickBus includes `Bus Company`, `Duration`, and `Seats Available`.
-
-### Hotel module (Booking.com)
-
-| Field | Description |
-|---|---|
-| `id` | Property ID from Booking.com API |
-| `pageName` | Property page name |
-| `address` | Property address |
-| `countryCode` | Country code |
-| `longitude` | Longitude coordinate |
-| `latitude` | Latitude coordinate |
-| `checkIn` | Check-in date |
-| `checkOut` | Check-out date |
-| `query_date` | Extraction timestamp |
-| `destination` | Queried destination city |
+Each consolidated file contains trip records. 
 
 ## Error Logging
 
@@ -153,25 +122,6 @@ Each script generates a `.log` file in the output directory with warnings and er
 - The system depends on the HTML structure of each platform. Interface changes (CSS selectors, element attributes, calendar components) may require updating the scripts.
 - City naming conventions differ across platforms and must be verified manually when configuring a new set of cities.
 - Google Chrome must be installed independently — it is not part of the Python environment.
-
-## Project Structure
-
-```
-.
-├── .gitignore
-├── .python-version
-├── LICENSE
-├── README.md
-├── requirements.txt
-├── output/
-│   └── .gitkeep
-└── scripts/
-    ├── ado_scraper.py
-    ├── busbud_scraper.py
-    ├── clickbus_scraper.py
-    ├── omnibus_scraper.py
-    └── booking_scraper.py
-```
 
 ## License
 
