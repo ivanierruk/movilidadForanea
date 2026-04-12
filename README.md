@@ -14,7 +14,7 @@ The system consists of five independent Python scripts, one per platform:
 | `omnibus_scraper.py` | [Omnibus de México](https://www.omnibus.com.mx/) | Bus routes: north, Bajío & central Mexico |
 | `clickbus_scraper.py` | [ClickBus](https://www.clickbus.com.mx/) | Bus routes: multi-carrier aggregator |
 | `busbud_scraper.py` | [BusBud](https://www.busbud.com/) | Bus routes: multi-carrier aggregator |
-| `booking_scraper.py` | [Booking.com](https://www.booking.com/) | Hotel coordinates via GraphQL API interception |
+| `booking_scraper.py` | [Booking.com](https://www.booking.com/) | Hotel coordinates |
 
 Each script can be executed independently, in any order, and at any time.
 
