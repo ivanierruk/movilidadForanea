@@ -17,7 +17,7 @@ import hashlib
 import logging
 
 # Set the output path for files 
-path_out = "/home/output/"
+path_out = '/home/output/'
 
 # ================= LOGGER ======================
 # Configure logging at the module level
@@ -177,6 +177,8 @@ class ADOScraper:
             print(f"Error finding container elements...")
             self.logger.error(f"Error finding container elements: {e}", exc_info=True)
             raise
+
+        print(f"Extracting data for {len(trip_containers)} containers...")
 
         # Iterate over the containers to extract the data 
         for trip in trip_containers:
