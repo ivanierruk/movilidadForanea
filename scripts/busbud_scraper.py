@@ -308,8 +308,8 @@ class BusBudScraper:
                 'Origin General': original_origin, 
                 "Origin": original_origin + "-" +  trip_origin,
                 "Destination": original_destination + "-" +  trip_destination,
-                "Departure Time": departure_time,
-                "Arrival Time": arrival_time,
+                "Departure Time": departure_time[14:].strip(), # to avoid more data on the tag 
+                "Arrival Time": arrival_time[15:].strip(), # to avoid more data o the tag 
                 "Price": price,
                 "Travel Date": travel_date.strftime("%Y-%m-%d"),
                 "Scraping Date": scraping_date,

@@ -75,7 +75,7 @@ class BookingScraper:
 
     def define_routes(self):
         """Define all route combinations"""
-        # TODO: Get all the other locations 
+        # Place all the other locations 
         locations = [
             "Mexico City, Mexico DF, Mexico",
             "Guadalajara, Jalisco, Mexico",
