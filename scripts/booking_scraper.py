@@ -77,13 +77,13 @@ class BookingScraper:
         """Define all route combinations"""
         # Place all the other locations 
         locations = [
+            "Puebla, State of Puebla, Mexico",
+            "Acapulco, Guerrero, Mexico",
             "Mexico City, Mexico DF, Mexico",
             "Guadalajara, Jalisco, Mexico",
             "Monterrey, Nuevo León, Mexico",
-            "Puebla, State of Puebla, Mexico",
             "León, Guanajuato, Mexico",
             "Cancún, México",
-            "Acapulco, Guerrero, Mexico",
             "Veracruz, Veracruz, Mexico",
             "Mazatlán, Sinaloa, Mexico",
             "Puerto Vallarta, Jalisco, Mexico" 
@@ -275,7 +275,7 @@ class BookingScraper:
                     #print(f"Failed to click map button with parent CSS selector...")
                     self.logger.error(f"Failed to click map button with parent CSS selector: {e}")
                     raise Exception("Could not click 'Show on map' button with any selector.")
-        time.sleep(12)
+        time.sleep(15)
 
     def extract_bounding_box(self):
         """Extract the MARKERS_ON_MAP bounding box from the first GraphQL response"""
@@ -386,7 +386,7 @@ class BookingScraper:
                    .move_by_offset(50, 0) \
                    .release() \
                    .perform()
-            time.sleep(3)
+            time.sleep(5)
         except Exception as e:
             self.logger.error(f"Error during map drag: {e}")
             return False
