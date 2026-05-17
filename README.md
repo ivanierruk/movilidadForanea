@@ -110,7 +110,7 @@ Scripts run in **visible (non-headless) mode** — a Chrome window will open and
 
 ## Output
 
-Each consolidated file contains trip records. 
+The `output/` directory serves as the primary destination for all raw data extracted by the Python web scraping scripts. It acts as the intermediate staging area before the data is moved to the `post-processing/` directory for cleaning and spatial analysis.
 
 ## Error Logging
 
