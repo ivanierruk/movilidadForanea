@@ -77,16 +77,16 @@ class BookingScraper:
         """Define all route combinations"""
         # Place all the other locations 
         locations = [
-            "Puebla, State of Puebla, Mexico",
-            "Acapulco, Guerrero, Mexico",
             "Mexico City, Mexico DF, Mexico",
             "Guadalajara, Jalisco, Mexico",
             "Monterrey, Nuevo León, Mexico",
             "León, Guanajuato, Mexico",
             "Cancún, México",
+            "Puebla, State of Puebla, Mexico",
             "Veracruz, Veracruz, Mexico",
             "Mazatlán, Sinaloa, Mexico",
             "Puerto Vallarta, Jalisco, Mexico" 
+            "Acapulco, Guerrero, Mexico",
         ]
 
         return locations
