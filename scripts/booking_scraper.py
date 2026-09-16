@@ -23,12 +23,6 @@ from seleniumwire import webdriver
 from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Set up Chrome options & Selenium with ChromeDriver
-# options = Options()
-# driver = webdriver.Chrome(
-#    service=Service(ChromeDriverManager().install()), options=options
-# )
-
 # Set the output path for files
 path_out = "/home/output/"
 
@@ -54,7 +48,7 @@ class BookingScraper:
         """Initialize the Selenium WebDriver with Chrome options."""
         self.options = Options()
         self.driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()), options=options
+            service=Service(ChromeDriverManager().install()), options=self.options
         )
         self.wait = WebDriverWait(self.driver, 10)
         self.base_url = "https://www.booking.com"
@@ -330,53 +324,34 @@ class BookingScraper:
         """To click the button map"""
 
         # clean memory (requests)
-        del self.driver.requests
+        if hasattr(self.driver, "requests"):
+            del self.driver.requests
 
         try:
+            # 1. Exact button based on the HTML
             map_button = self.wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "div.a9918d47bf"))
+                EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, "button[data-map-trigger-button='1']")
+                )
             )
+
+            # 2. Scroll to place the button at center and force focus
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", map_button
+            )
+            time.sleep(1)
+
+            # 3. Click the button
             map_button.click()
-            print("Clicked map button using CSS selector: div.a9918d47bf")
-        except Exception as e:
-            # print(f"Failed to click map button with CSS selector...")
-            self.logger.error(
-                f"Failed to click map button with CSS selector: {e}", exc_info=True
+            print(
+                "Clicked map button using CSS selector: button[data-map-trigger-button='1']"
             )
 
-            try:
-                map_button = self.wait.until(
-                    EC.element_to_be_clickable(
-                        (By.XPATH, "//div[contains(text(), 'Show on map')]")
-                    )
-                )
-                map_button.click()
+            time.sleep(15)
 
-                print(
-                    "Clicked map button using XPath: //div[contains(text(), 'Show on map')]"
-                )
-            except Exception as e:
-                # print(f"Failed to click map button with XPath...")
-                self.logger.error(f"Failed to click map button with XPath: {e}")
-
-                try:
-                    map_button = self.wait.until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "div.b108fb4540"))
-                    )
-                    map_button.click()
-
-                    print(
-                        "Clicked map button using parent CSS selector: div.b108fb4540"
-                    )
-                except Exception as e:
-                    # print(f"Failed to click map button with parent CSS selector...")
-                    self.logger.error(
-                        f"Failed to click map button with parent CSS selector: {e}"
-                    )
-                    raise Exception(
-                        "Could not click 'Show on map' button with any selector."
-                    )
-        time.sleep(15)
+        except Exception as e:
+            self.logger.error(f"Failed to click map button: {e}", exc_info=True)
+            raise Exception("Could not click 'Show on map' button.")
 
     def extract_bounding_box(self):
         """Extract the MARKERS_ON_MAP bounding box from the first GraphQL response"""
