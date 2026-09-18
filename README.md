@@ -116,6 +116,26 @@ The `output/` directory serves as the primary destination for all raw data extra
 
 Each script generates a `.log` file in the output directory with warnings and errors (failed selectors, captured exceptions, export errors). Progress messages are printed to the console during execution.
 
+## Data preparation for R
+
+After the files were saved, the mobility datasets were reviewed in Excel. Column headers were renamed to remove spaces, standardise their names and match those used in the R scripts. The Day Offset column, which indicates journeys that depart on one date and arrive on another, was removed because it was not used in this analysis. The Price column was also removed, as prices were not analysed in this exercise. Values in the retained columns were not modified.
+
+The following table details the variable mapping between the output dataset and the cleaned data used for analysis in R. 
+
+| Original column name | Column name used in R |
+|---|---|
+| Origin General | ori_gral |
+| Origin | origen |
+| Destination | destino |
+| Day Offset | Removed |
+| Departure Time | salida |
+| Arrival Time | llegada |
+| Price | Removed |
+| Travel Date | fecha_viaje |
+| Scraping Date | scraping |
+| id | id |
+
+
 ## Post-processing (R script and final data)
 
 ### Mobility Data Processing (`interurban_mobility_flows.R`)
