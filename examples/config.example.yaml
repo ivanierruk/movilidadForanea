@@ -1,0 +1,23 @@
+# Example config file for movilidadForanea.
+# Copy this file and edit using your own configuration values. 
+
+# Directory to save the .xlsx files.
+output_dir: "./resultados"
+
+# --- Bus route config (mobility) ---
+mobility:
+  headless: false # false = se ve la ventana de Chrome; true = oculta
+  start_date: "2026-11-01" # first date to inspect (AAAA-MM-DD)
+  n_days: 7 # number of days (starting today) to get info 
+  routes: # pairs origin -> destiny 
+    - [ "Ciudad de México, CDMX", "Acapulco" ]
+    - [ "Ciudad de México, CDMX", "Puebla" ]
+
+# --- Hotel configuration (accommodation / Booking) ---
+accommodation:
+  headless: false
+  checkin_date: "2026-11-01" # checkin date 
+  stay_nights: 5 # how many nights 
+  cities: # city list to inspect 
+    - "Cancún"
+    - "Acapulco"

@@ -1,0 +1,24 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+
+# --- Extraction outputs (generated data, not source code) ---
+resultados/
+*.log
+
+# --- Local, user-specific config (keep the example tracked, ignore real runs) ---
+config.yaml
+
+# --- OS / editor noise ---
+.DS_Store
+.idea/
+.vscode/
+

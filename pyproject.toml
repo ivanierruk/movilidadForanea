@@ -1,0 +1,38 @@
+# Packaging configuration for movilidad-foranea.
+
+[build-system]
+# "build-backend" is the tool that assembles the installable package.
+# hatchling is modern, simple, and needs no extra configuration.
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "movilidad-foranea"
+version = "0.1.0"
+description = "Reproducible extraction of intercity bus routes and hotel geolocation in Mexico"
+readme = "README.md"
+requires-python = ">=3.10"      
+license = "GPL-3.0-only" 
+
+authors = [
+  { name = "Ivan Espinosa Ramírez" },
+  { name = "Victor Alfonso Reyes García" },
+]
+
+# TODO: Place the requirements.txt  
+dependencies = [
+  "selenium",            # drives the Chrome browser
+  "webdriver-manager",   # downloads/manages ChromeDriver automatically
+  "pandas",              # tabular data handling
+  "openpyxl",            # required for pandas to write .xlsx files
+  "pyyaml",              # reads the config.yaml file
+]
+
+[project.scripts]
+# Creates the "movilidad-foranea" command in the terminal.
+# It points to the main() function in cli.py.
+movilidad-foranea = "movilidad_foranea.cli:main"
+
+[tool.hatch.build.targets.wheel]
+# tells hatchling that the package code lives under src/
+packages = ["src/movilidad_foranea"]
