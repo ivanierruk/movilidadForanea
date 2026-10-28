@@ -1,182 +1,276 @@
-# Intercity Mobility & Hotel Geolocation — Web Scraping System
+# Intercity mobility and accommodation in Mexico: from web platforms to spatial data
 
-Automated data extraction system for intercity bus travel and hotel geolocation in Mexico. The system collects route information (schedules, fares, terminals) from four bus platforms and georeferenced hotel coordinates.
+**`movilidad-foranea` — Reproducible extraction of intercity bus routes and hotel geolocation in Mexico.**
 
-Developed as part of a research project at **UNAM - IIEc** (Instituto de Investigaciones Económicas).
+`movilidad-foranea` is an installable Python package that collects intercity
+bus-travel information (schedules, terminals, fares) from four bus platforms and
+georeferenced hotel coordinates from Booking.com, for a user-defined set of
+cities and dates. It was developed as part of a research project at
+**UNAM – IIEc** (Universidad Nacional Autónoma de México, Instituto de
+Investigaciones Económicas / National Autonomous University of Mexico, Institute
+for Economic Research).
 
-## Overview
+This package is the reusable, installable successor to the original collection of
+standalone scripts: the scraping logic is the same, but the cities, dates and
+output location are now supplied through a configuration file instead of being
+edited inside the source code, and every scraper is available through a single
+command-line interface (CLI).
 
-The system consists of five independent Python scripts, one per platform:
+---
 
-| Script | Platform | Data collected |
-|---|---|---|
-| `ado_scraper.py` | [ADO](https://www.ado.com.mx/) | Bus routes: south, southeast & Gulf of Mexico |
-| `omnibus_scraper.py` | [Omnibus de México](https://www.omnibus.com.mx/) | Bus routes: north, Bajío & central Mexico |
-| `clickbus_scraper.py` | [ClickBus](https://www.clickbus.com.mx/) | Bus routes: multi-carrier aggregator |
-| `busbud_scraper.py` | [BusBud](https://www.busbud.com/) | Bus routes: multi-carrier aggregator |
-| `booking_scraper.py` | [Booking](https://www.booking.com/) | Hotel coordinates |
+## Scientific purpose
 
-Each script can be executed independently, in any order, and at any time.
+Studying interurban mobility and the spatial distribution of tourism
+infrastructure in Mexico requires harmonized, reproducible data on **how people
+can travel between cities** and **where lodging is concentrated**. Such data is
+not published as a single open dataset: it is scattered across commercial
+booking platforms, each with its own interface, city-naming conventions and page
+structure.
+
+This software addresses that gap by:
+
+- collecting bus-route availability between city pairs from four platforms
+  (ADO, Omnibus de México, ClickBus and BusBud),
+- collecting georeferenced hotel locations from Booking.com, and
+- producing standardized spreadsheets whose column names are aligned across
+  platforms, ready for downstream origin–destination (OD) and spatial analysis.
+
+The resulting datasets support the construction of interurban travel-flow
+matrices and kernel-density estimates of accommodation supply (see
+*Post-processing* below).
+
+---
+
+## Data collected
+
+| Module | Platform | Data collected |
+|--------|----------|----------------|
+| `mobility.ado` | [ADO](https://www.ado.com.mx/) | Bus routes: south, southeast & Gulf of Mexico |
+| `mobility.omnibus` | [Omnibus de México](https://www.odm.com.mx/) | Bus routes: north, Bajío & central Mexico |
+| `mobility.clickbus` | [ClickBus](https://www.clickbus.com.mx/) | Bus routes: multi-carrier aggregator |
+| `mobility.busbud` | [BusBud](https://www.busbud.com/) | Bus routes: multi-carrier aggregator |
+| `accommodation.booking` | [Booking.com](https://www.booking.com/) | Hotel coordinates |
+
+---
 
 ## Requirements
 
-- **Python 3.10** (see `.python-version`)
-- **Google Chrome** installed on your system (Selenium automates a real browser instance; it does not emulate one)
-- ChromeDriver is managed automatically by `webdriver-manager` at runtime
+- **Python 3.10 or newer**
+- **Google Chrome** installed on the system. Selenium automates a real Chrome
+  instance; it does not emulate one. ChromeDriver itself is downloaded and
+  managed automatically at runtime by `webdriver-manager`.
+
+---
 
 ## Installation
 
-### Option A: venv (recommended)
+The package can be installed directly from GitHub, without being published to
+PyPI (the Python Package Index). Install a specific released version by tag:
 
 ```bash
-# Clone the repository
-git clone https://github.com/ivanierruk/movilidadForanea.git
-cd movilidadForanea
-
-# Create virtual environment with Python 3.10
-python3.10 -m venv venv
-
-# Activate the environment
-# Linux / macOS:
-source venv/bin/activate
-# Windows:
-venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+python -m pip install "git+https://github.com/ivanierruk/movilidadForanea.git@v2.0.0"
 ```
 
-### Option B: uv (alternative)
+### Development install
+
+To work on the code itself, clone the repository and install it in *editable*
+mode (`-e`), so that changes to the source take effect without reinstalling:
 
 ```bash
-# Clone the repository
 git clone https://github.com/ivanierruk/movilidadForanea.git
 cd movilidadForanea
-
-# Create virtual environment (uv downloads Python 3.10 automatically if needed)
-uv venv venv --python=python3.10
-
-# Activate the environment
-# Linux / macOS:
-source venv/bin/activate
-# Windows:
-venv\Scripts\activate
-
-# Install dependencies
-uv pip install -r requirements.txt
+python -m pip install -e .
 ```
 
-> **Note:** On Windows and Debian-based distributions, `uv` may require manual installation of `setuptools` and `wheel` before installing the project dependencies:
-> ```bash
-> uv pip install setuptools wheel
-> uv pip install -r requirements.txt
-> ```
+---
 
 ## Configuration
 
-Before running any script, set the output directory by editing the `path_out` variable at the top of each script file:
+All run parameters live in a single YAML file; the source code is never edited
+to change cities, dates or the output location. Copy the provided example and
+adapt it:
 
-```python
-path_out = "/your/desired/output/path/"
+```bash
+cp examples/config.example.yaml config.yaml
 ```
 
-The output directory must exist before execution — the scripts do not create it automatically. The `output/` folder in this repository is provided for this purpose.
+A minimal `config.yaml` looks like this:
 
-### Customizing cities and dates
+```yaml
+# Directory where the output .xlsx files will be saved.
+output_dir: "./output"
 
-Each script defines its own list of cities and date range internally:
+# --- Bus route extraction (mobility) ---
+mobility:
+  headless: false            # false = Chrome window is visible; true = hidden
+  start_date: "2026-11-01"   # first travel date to query (format YYYY-MM-DD)
+  n_days: 7                  # number of consecutive days to query from that date
+  routes:                    # (origin, destination) pairs
+    - [ "Ciudad de México, CDMX", "Acapulco" ]
+    - [ "Ciudad de México, CDMX", "Puebla" ]
 
-- **Cities:** Edit the `define_routes()` method to modify the list of origin-destination cities. Note that city names differ across platforms for the same location (e.g., "Ciudad de México, CDMX" in ADO vs. "Ciudad de Mexico, México, México" in BusBud).
-- **Dates:** Edit the `define_dates()` method to adjust the date range. Mobility scripts generate consecutive dates starting from the execution day. The Booking script uses a single check-in date with a fixed 5-day stay.
+# --- Hotel extraction (accommodation / Booking) ---
+accommodation:
+  headless: false
+  checkin_date: "2026-11-01" # check-in date
+  stay_nights: 5             # length of stay in nights
+  cities:                    # list of cities to query
+    - "Cancún"
+    - "Acapulco"
+```
+
+> **Important:** city names differ across platforms for the same location
+> (for example, `"Ciudad de México, CDMX"` on ADO vs.
+> `"Ciudad de Mexico, México, México"` on BusBud). The exact spelling each
+> platform expects must be verified manually when configuring a new set of
+> cities.
+
+---
 
 ## Usage
 
-Activate the virtual environment and run any script from the terminal:
+Installing the package registers a `movilidad-foranea` command. Every subcommand
+takes a `--config` pointing at your YAML file:
 
 ```bash
-# Activate environment
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate     # Windows
+# Run every scraper (the four bus platforms and Booking), in sequence
+movilidad-foranea all --config config.yaml
 
-# Run a scraper
-python scripts/ado_scraper.py
-python scripts/busbud_scraper.py
-python scripts/clickbus_scraper.py
-python scripts/omnibus_scraper.py
-python scripts/booking_scraper.py
+# Run all four bus platforms
+movilidad-foranea mobility --config config.yaml
+
+# Run a single bus platform
+movilidad-foranea mobility --platform ado --config config.yaml
+
+# Run only the hotel (Booking) scraper
+movilidad-foranea hotels --config config.yaml
 ```
 
-Scripts run in **visible (non-headless) mode** — a Chrome window will open and you can observe the extraction process in real time. Each script generates individual `.xlsx` files per query and a consolidated file per platform upon completion.
+Scrapers run **sequentially, never in parallel**. Each one drives its own Chrome
+session, and running several at once would place an unnecessarily heavy load on
+the target sites and increase the risk of being blocked. The sequential design,
+together with the built-in waits between requests, is a deliberate choice to
+keep the tool respectful of the consulted servers.
 
-## Output
+By default Chrome runs in **visible (non-headless) mode**: a browser window opens
+and the extraction can be observed in real time. Set `headless: true` in the
+configuration to run without a visible window.
 
-The `output/` directory serves as the primary destination for all raw data extracted by the Python web scraping scripts. It acts as the intermediate staging area before the data is moved to the `post-processing/` directory for cleaning and spatial analysis.
+### Minimal reproducible example
 
-## Error Logging
+```bash
+# 1. Install the package
+python -m pip install "git+https://github.com/ivanierruk/movilidadForanea.git@v2.0.0"
 
-Each script generates a `.log` file in the output directory with warnings and errors (failed selectors, captured exceptions, export errors). Progress messages are printed to the console during execution.
+# 2. Create a configuration file
+cp examples/config.example.yaml config.yaml
+# (edit config.yaml: set output_dir, the routes and the dates you want)
 
-## Data preparation for R
+# 3. Run a single, small extraction (one bus platform)
+movilidad-foranea mobility --platform ado --config config.yaml
+```
 
-After the files were saved, the mobility datasets were reviewed in Excel. Column headers were renamed to remove spaces, standardise their names and match those used in the R scripts. The Day Offset column, which indicates journeys that depart on one date and arrive on another, was removed because it was not used in this analysis. The Price column was also removed, as prices were not analysed in this exercise. Values in the retained columns were not modified.
+After the run finishes, the standardized results are in
+`output/ado/ado_trips_combined.xlsx`.
 
-The following table details the variable mapping between the output dataset and the cleaned data used for analysis in R. 
+---
 
-| Original column name | Column name used in R |
-|---|---|
-| Origin General | ori_gral |
-| Origin | origen |
-| Destination | destino |
-| Day Offset | Removed |
-| Departure Time | salida |
-| Arrival Time | llegada |
-| Price | Removed |
-| Travel Date | fecha_viaje |
-| Scraping Date | scraping |
-| id | id |
+## Inputs
 
+- A **`config.yaml`** file (see *Configuration*) specifying the output directory,
+  the origin–destination city pairs and date range for bus routes, and the
+  cities, check-in date and length of stay for hotels.
+- A working **Google Chrome** installation.
 
-## Post-processing (R script and final data)
+---
 
-### Mobility Data Processing (`interurban_mobility_flows.R`)
-This script integrates the output from the four bus platforms (ADO, BusBud, ClickBus, Omnibus) into a single dataset. Key tasks include:
+## Outputs
 
-* **Data Cleansing & Standardization:** Filters out unnecessary variables, standardizes dates, and groups dozens of specific bus terminals into standardized city keys (e.g., "aca", "mex", "gdl").
-* **Origin-Destination (OD) Matrix:** Aggregates the cleaned data to create a frequency table of trips between origin and destination cities.
-* **Spatial Mapping:** Merges the OD matrix with geographical coordinates (`ciudades.csv`) to build spatial line geometries (`sf`). It outputs a map (`flow_cities.jpg`) illustrating interurban travel flows, where line thickness represents the volume of available trips.
+Each platform writes into its own subdirectory of `output_dir`, so results never
+mix between platforms:
 
-### 2. Hotel Data Processing (`hotel_kernel_analysis.R`)
-This script processes the georeferenced accommodation data extracted from Booking. Key tasks include:
+```
+output/
+├── ado/
+│   ├── ado_trips_<origin>_to_<destination>_<date>.xlsx   # one file per route-date
+│   ├── ado_trips_combined.xlsx                           # consolidated, de-duplicated
+│   └── scraping_errors_ADO.log                           # warnings and errors
+├── omnibus/
+├── clickbus/
+├── busbud/
+└── booking/
+    ├── Booking_trips_to_<city>_<date>.xlsx
+    └── Booking_trips_combined.xlsx
+```
 
-* **Data Cleansing:** Standardizes city names to match the mobility city keys and formats text data.
-* **Kernel Density Estimation (KDE):** Converts coordinates into spatial point patterns (`spatstat`) to calculate the concentration of hotels.
-* **Spatial Mapping:** Generates two maps cropped to the Mexican national boundary:
-    * `local_kernel.jpg`: Highlights dense, city-level accommodation clusters (sigma = 30km).
-    * `regional_kernel.jpg`: Highlights broader spatial corridors and regional accommodation trends (sigma = 60km).
+- **Per route-date / per city files** contain the raw extracted rows.
+- **`*_combined.xlsx`** files consolidate all of a platform's results for the run
+  and drop duplicate trips/properties by a hashed identifier.
+- **`scraping_errors_*.log`** records failed selectors, captured exceptions and
+  export errors. Progress messages are printed to the console during execution.
 
-### Generated Maps
-Here is an example of the visual outputs generated by the post-processing scripts:
+The bus-route datasets share standardized column names (`Origin General`,
+`Origin`, `Destination`, `Departure Time`, `Arrival Time`, `Travel Date`,
+`Scraping Date`, `id`, …) so they can be concatenated across platforms. The
+Booking dataset contains property identifiers and `latitude` / `longitude`
+coordinates.
 
-**Regional-scale kernel density of hotels in selected cities in Mexico**
-*(This map visualizes the spatial concentration of hotels across selected Mexican cities using a Kernel Density Estimation (KDE)).*
+---
 
-![Interurban Travel Flows](post-processing/hotels/regional_kernel.jpg)
+## Post-processing (R, optional)
 
-> **Note:** To view other maps, navigate to `post-processing/hotels/local_kernel.jpg` or `post-processing/mobility/flow_cities.jpg`.
+The `post-processing/` directory contains the downstream **R** analysis used in
+the research project. It is **not** part of the installable Python package, but
+is included to document the complete, reproducible workflow:
 
-## Important Notes
+- `interurban_mobility_flows.R` — integrates the four bus datasets, standardizes
+  terminals into city keys, builds an origin–destination (OD) matrix and maps
+  interurban travel flows.
+- `hotel_kernel_analysis.R` — performs kernel density estimation (KDE) on the
+  Booking coordinates to map local and regional accommodation concentration.
 
-- Python scripts include systematic wait times between requests to avoid overloading the consulted servers.
-- The extraction system depends on the HTML structure of each platform. Interface changes (CSS selectors, element attributes, calendar components) may require updating the scripts.
-- City naming conventions differ across platforms and must be verified manually when configuring a new set of cities.
-- Google Chrome must be installed independently — it is not part of the Python environment.
-- The post-processing is an additional step after the city and hotel extractions.  
+---
+
+## Limitations
+
+- **Web-source fragility.** Each scraper depends on the current HTML structure
+  of its platform. Interface changes (CSS selectors, element attributes,
+  calendar components) may break extraction and require updating the
+  corresponding module. This is inherent to web scraping and should be expected
+  over time.
+- **City naming is platform-specific.** The same city must often be written
+  differently on each platform, and must be verified manually (see
+  *Configuration*).
+- **Google Chrome is an external dependency.** It must be installed separately;
+  it is not part of the Python environment.
+- **No parallel execution.** Scrapers run one at a time by design (see *Usage*).
+  A full run over many city pairs and dates can therefore take a long time.
+- **`selenium-wire` dependency.** The Booking scraper relies on `selenium-wire`
+  to intercept GraphQL responses. Depending on the Python and operating-system
+  environment, this dependency can occasionally require additional setup.
+- **Not for commercial use.** This software is intended for academic research.
+  It includes systematic wait times to avoid overloading the consulted servers
+  and should be used responsibly and in accordance with each platform's terms.
+
+---
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 — see the LICENSE file for the full text.
+This project is licensed under the GNU General Public License v3.0
+(GPL-3.0-only). See the [LICENSE](LICENSE) file for the full text.
 
-## Author
+---
 
-- Ivan Espinosa Ramírez - UNAM, Instituto de Investigaciones Economicas (IIEc) 
-- Victor Alfonso Reyes García - UNAM, Instituto de Investigaciones Economicas (IIEc)
+## Citation
+
+If you use this software in your research, please cite it. A machine-readable
+citation is provided in [`CITATION.cff`](CITATION.cff), and an archived,
+citable version is available via Zenodo (DOI to be added for the v2.0.0
+release).
+
+---
+
+## Authors
+
+- Reyes, Victor — UNAM, Instituto de Investigaciones Económicas (IIEc)
+- Espinosa, Iván — UNAM, Instituto de Investigaciones Económicas (IIEc)
