@@ -22,3 +22,10 @@ config.yaml
 .idea/
 .vscode/
 
+# --- Ignore everything generated inside /output but keep directory structure ----
+output/**
+!output/**/
+!output/**/.gitkeep
+
+
+
