@@ -36,3 +36,7 @@ movilidad-foranea = "movilidad_foranea.cli:main"
 [tool.hatch.build.targets.wheel]
 # tells hatchling that the package code lives under src/
 packages = ["src/movilidad_foranea"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -26,17 +26,11 @@ from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 
 from ..config import Config
+from ._dates import build_travel_dates
 
 logger = logging.getLogger(__name__)
 
 PLATFORM = "clickbus"
-
-
-def build_travel_dates(start: date, n_days: int) -> list[date]:
-    """
-    Return a list of n_days consecutive dates starting at `start`.
-    """
-    return [start + timedelta(days=offset) for offset in range(n_days)]
 
 
 class ClickbusScraper:
