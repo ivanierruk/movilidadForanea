@@ -1,0 +1,18 @@
+# Example TEST configuration — single platform (BusBud) only.
+#
+# Minimal one-route, one-day run to verify the BusBud scraper works end to end.
+# Run with:
+#     movilidad-foranea mobility --platform busbud --config examples/config.busbud-test.yaml
+#
+# Dates use "today" (resolved to the current date automatically by config.py).
+
+output_dir: "./output"
+
+mobility:
+  headless: false
+  start_date: "today"
+  n_days: 1
+  routes:
+    # City names as BusBud spells them. Adjust if this route returns no results
+    # on the test day.
+    - [ "Ciudad de Mexico, México, México", "Guadalajara, Jalisco, México" ]

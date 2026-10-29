@@ -1,0 +1,30 @@
+# Example TEST configuration — single platform (ADO) only.
+#
+# Purpose: a minimal, quick run to verify that the ADO scraper works
+# end to end (one route, one day). It is NOT a full extraction.
+#
+# Run it with:
+#     movilidad-foranea mobility --platform ado --config examples/config.ado-test.yaml
+#
+# Dates use the special value "today", which config.py resolves to the current
+# date automatically, so this file needs no manual editing before each run.
+
+output_dir: "./output"
+
+# --- Bus route extraction (mobility) ---
+mobility:
+  headless: false # false = the Chrome window is visible, so you can watch the run
+  start_date: "today" # resolved to the current date by config.py (no manual editing needed)
+  n_days: 1 # just one day, to keep the test short
+  routes:
+    - [ "Ciudad de México, CDMX", "Puebla, Pue." ]   # city names as ADO spells them
+
+# --- Hotel extraction (accommodation / Booking) ---
+# Included only because load_config reads both sections; it is not used when
+# running "mobility --platform ado".
+accommodation:
+  headless: false
+  checkin_date: "today"
+  stay_nights: 5
+  cities:
+    - "Cancún"

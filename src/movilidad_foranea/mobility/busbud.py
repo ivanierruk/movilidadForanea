@@ -41,6 +41,7 @@ class BusBudScraper:
         self.options = Options()
         if headless:
             self.options.add_argument("--headless=new")
+        self.options.add_argument("--window-size=1920,1080")  # wide view
         self.driver = None
         self.wait = None
         self.base_url = "https://www.busbud.com/es-mx/bt/billetes-de-autobus"

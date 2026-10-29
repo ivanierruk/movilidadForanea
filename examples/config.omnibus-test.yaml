@@ -1,0 +1,20 @@
+# Example TEST configuration — single platform (Omnibus de México) only.
+#
+# Minimal one-route, one-day run to verify the Omnibus scraper works end to end.
+# Run with:
+#     movilidad-foranea mobility --platform omnibus --config examples/config.omnibus-test.yaml
+#
+# Dates use "today" (resolved to the current date automatically by config.py).
+# The accommodation section is omitted: config.py fills in sensible defaults for
+# the section not used by this run.
+
+output_dir: "./output"
+
+mobility:
+  headless: false
+  start_date: "today"
+  n_days: 1
+  routes:
+    # City names as Omnibus de México spells them. Adjust if this route returns
+    # no results on the test day.
+    - [ "CDMX Mexico Central Norte", "Monterrey Central Autobus" ]

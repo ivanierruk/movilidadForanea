@@ -43,6 +43,7 @@ class BookingScraper:
         self.options = Options()
         if headless:
             self.options.add_argument("--headless=new")
+        self.options.add_argument("--window-size=1920,1080")  # wide view
         self.stay_nights = stay_nights
         self.driver = webdriver.Chrome(
             service=Service(ChromeDriverManager().install()), options=self.options

@@ -1,0 +1,18 @@
+# Example TEST configuration — single platform (ClickBus) only.
+#
+# Minimal one-route, one-day run to verify the ClickBus scraper works end to end.
+# Run with:
+#     movilidad-foranea mobility --platform clickbus --config examples/config.clickbus-test.yaml
+#
+# Dates use "today" (resolved to the current date automatically by config.py).
+
+output_dir: "./output"
+
+mobility:
+  headless: false
+  start_date: "today"
+  n_days: 1
+  routes:
+    # City names as ClickBus spells them. Adjust if this route returns no
+    # results on the test day.
+    - [ "Ciudad de México, CDMX - Todas las Terminales", "Guadalajara, JAL - Todas las Terminales" ]

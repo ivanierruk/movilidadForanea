@@ -1,0 +1,20 @@
+# Example TEST configuration — hotels (Booking.com) only.
+#
+# Minimal one-city run to verify the Booking scraper works end to end. Intercepts 
+# GraphQL responses and manipulates the map, so it is worth testing on its own.
+# Run with:
+#     movilidad-foranea hotels --config examples/config.booking-test.yaml
+#
+# checkin_date uses "today" (resolved to the current date automatically by
+# config.py); the stay is stay_nights long. The mobility section is omitted:
+# config.py fills in sensible defaults for the section not used by this run.
+
+output_dir: "./output"
+
+accommodation:
+  headless: false
+  checkin_date: "today"
+  stay_nights: 5
+  cities:
+    # City name as Booking spells it. Adjust if needed.
+    - "Cancún, México"
