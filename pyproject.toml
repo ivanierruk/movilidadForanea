@@ -45,3 +45,16 @@ packages = ["src/movilidad_foranea"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Default run excludes integration tests, so CI run only the 
+# stable unit test. 
+addopts = "-m 'not integration'"
+markers = [
+    "integration: requires Google Chrome / network; run manually with -m integration",
+]
+
+# Silence a known upstream DeprecationWarning from selenium-wire's bundled 
+# (pkg_resources API). It is not emmited by this package's code and does 
+# not affect correctness. 
+filterwarnings = ["ignore::DeprecationWarning:seleniumwire.*",]
+
+
