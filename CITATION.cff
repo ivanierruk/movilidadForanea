@@ -1,0 +1,54 @@
+
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "movilidad-foranea: Intercity Mobility & Hotel Geolocation Web Scraping System"
+abstract: >-
+  This paper develops a methodology to extract, organise and structure spatial data on intercity mobility
+  and hotel infrastructure in Mexico from web platforms. Five independent Python scripts automate
+  queries to bus operators, ticket aggregators and an accommodation reservation platform. The
+  architecture separates input parameters, platform-specific extraction and structured outputs,
+  combining browser automation with network traffic interception to recover accommodation
+  coordinates. A spatial subdivision strategy retrieves establishments beyond those displayed in the
+  initial map query. Applied to ten Mexican cities selected for their demographic or tourism relevance,
+  the workflow generates platform-specific databases. Subsequent processing in R produces an origin–
+  destination matrix of aggregated platform records and a georeferenced accommodation database,
+  illustrated through flow maps and kernel density surfaces. The contribution is methodological: a
+  documented architecture F connecting web queries to spatial datasets. The outputs represent visible
+  platform supply rather than observed passenger movements or exhaustive service inventories.
+
+type: software
+version: 2.0.0
+date-released: "2026-10-28"   # TODO: update to the actual v2.0.0 release date
+license: GPL-3.0-only
+repository-code: "https://github.com/ivanierruk/movilidadForanea"
+# doi: "10.5281/zenodo.XXXXXXX"   # TODO: add the Zenodo DOI minted for v2.0.0
+authors:
+  - family-names: "Reyes"
+    given-names: "Victor"
+    affiliation: "Instituto de Investigaciones Económicas, Universidad Nacional Autónoma de México (UNAM)"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TOOD: add 
+  - family-names: "Espinosa"
+    given-names: "Iván"
+    affiliation: "Instituto de Investigaciones Económicas, Universidad Nacional Autónoma de México (UNAM)"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO: add orcid
+keywords:
+  - intercity mobility
+  - accommodation
+  - spatial data
+  - web scraping
+
+# -----------------------------------------------------------------------------
+# Associated research article (manuscript under review).
+# Uncomment and complete once it is published, adding the FULL paper author list
+# (the paper may have more authors than the software), the journal and the DOI.
+#
+# preferred-citation:
+#   type: article
+#   title: "Intercity mobility and accommodation in Mexico: from web platforms to spatial data"
+#   authors:
+#     - family-names: "..."
+#       given-names: "..."
+#   journal: "..."
+#   year: 2026
+#   doi: "..."
+# -----------------------------------------------------------------------------
