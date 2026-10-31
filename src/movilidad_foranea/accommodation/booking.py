@@ -17,6 +17,7 @@ from pathlib import Path
 
 import brotli
 import pandas as pd
+from pandera.errors import SchemaErrors
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
@@ -28,9 +29,9 @@ from seleniumwire import webdriver
 from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 
-from ..config import Config
-
-logger = logging.getLogger(__name__)
+from ..cleaning import normalize_missing
+from ..logging_setup import setup_file_logging
+from ..validation import validate_accommodation
 
 PLATFORM = "booking"
 
@@ -570,6 +571,14 @@ class BookingScraper:
             df.drop_duplicates(subset=["id"], inplace=True)
             print(f"Export DataFrame shape without duplicates: {df.shape} ...")
 
+            df = normalize_missing(df)
+            try:
+                validate_accommodation(df)
+            except SchemaErrors as exc:
+                self.logger.warning(
+                    f"Data validation reported issues:\n{exc.failure_cases}"
+                )
+
             # export to excel
             df.to_excel(filename, index=False, engine="openpyxl")
 
@@ -600,22 +609,6 @@ class BookingScraper:
             logging.getLogger("BookingScraper").error(
                 f"Error concatenating all files: {e}", exc_info=True
             )
-
-
-def _setup_file_logging(output_dir: Path) -> None:
-    """
-    Attach a file handler that writes errors to output_dir/scraping_errors_Booking.log.
-    """
-    output_dir.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(
-        output_dir / "scraping_errors_Booking.log", encoding="utf-8"
-    )
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    )
-    root = logging.getLogger()
-    root.setLevel(logging.WARNING)
-    root.addHandler(handler)
 
 
 def scrape_booking(config: Config) -> pd.DataFrame:

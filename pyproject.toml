@@ -31,6 +31,8 @@ dependencies = [
   "tqdm",                # progress bars during scraping
   "pyyaml",              # reads the config.yaml file
   "brotli",              # decompresses Brotli-encoded responses in Booking
+  "pandera",             # output data-frame schema validation
+  "tenacity",            # retry logic for Selenium failure
 ]
 
 [project.scripts]

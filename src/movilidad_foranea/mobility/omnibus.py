@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
+from pandera.errors import SchemaErrors
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -25,10 +26,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 
+from ..cleaning import normalize_missing
 from ..config import Config
+from ..logging_setup import setup_file_logging
+from ..validation import validate_mobility
 from ._dates import build_travel_dates
-
-logger = logging.getLogger(__name__)
 
 PLATFORM = "omnibus"
 
@@ -277,6 +279,13 @@ class OmnibusScraper:
 
         try:
             df = pd.DataFrame(trips_data)
+            df = normalize_missing(df)
+            try:
+                validate_mobility(df)
+            except SchemaErrors as exc:
+                self.logger.warning(
+                    f"Data validation reported issues:\n%s {exc.failure_cases}"
+                )
             df.to_excel(filename, index=False, engine="openpyxl")
             print(f"Saved {len(trips_data)} trips to {filename}")
             return filename
@@ -308,20 +317,6 @@ class OmnibusScraper:
             logging.getLogger("OmnibusScraper").error(
                 f"Error concatenating all files: {e}", exc_info=True
             )
-
-
-def _setup_file_logging(output_dir: Path) -> None:
-    """Attach a file handler that writes errors to output_dir/scraping_errors_Omnibus.log."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(
-        output_dir / "scraping_errors_Omnibus.log", encoding="utf-8"
-    )
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    )
-    root = logging.getLogger()
-    root.setLevel(logging.WARNING)
-    root.addHandler(handler)
 
 
 def scrape_omnibus(config: Config) -> pd.DataFrame:

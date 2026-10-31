@@ -134,3 +134,5 @@ wsproto==1.2.0
 xlrd==2.0.1
 zipp==3.21.0
 zstandard==0.23.0
+pandera==0.35.0      
+tenacity==9.2.1     

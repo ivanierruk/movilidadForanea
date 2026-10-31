@@ -238,6 +238,13 @@ is included to document the complete, reproducible workflow:
   calendar components) may break extraction and require updating the
   corresponding module. This is inherent to web scraping and should be expected
   over time.
+- **BusBud is blocked by anti-bot protection.** BusBud was scrapable when this 
+  project began, but the site has since deployed Cloudflare bot management, 
+  which detects the automated browser through its fingerprint and behaviour and 
+  blocks access. The busbud module is retained and works where no such protection 
+  is present, but automated extraction from BusBud is no longer reliable. This 
+  is an example of the temporal fragility of web sources: a source that works 
+  today may be gated tomorrow.
 - **City naming is platform-specific.** The same city must often be written
   differently on each platform, and must be verified manually (see
   *Configuration*).
@@ -251,7 +258,6 @@ is included to document the complete, reproducible workflow:
 - **Not for commercial use.** This software is intended for academic research.
   It includes systematic wait times to avoid overloading the consulted servers
   and should be used responsibly and in accordance with each platform's terms.
-
 ---
 
 ## License
