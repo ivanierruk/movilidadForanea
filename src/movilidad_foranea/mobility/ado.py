@@ -18,6 +18,7 @@ from pathlib import Path
 import pandas as pd
 from pandera.errors import SchemaErrors
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -29,6 +30,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from ..cleaning import normalize_missing
 from ..config import Config
 from ..logging_setup import setup_file_logging
+from ..retry_config import build_retryer
 from ..validation import validate_mobility
 from ._dates import build_travel_dates
 
@@ -43,7 +45,6 @@ class ADOScraper:
         self.options = Options()
         if headless:
             self.options.add_argument("--headless=new")
-        self.options.add_argument("--window-size=1920,1080")  # wide view
         self.driver = None
         self.wait = None
         self.base_url = "https://www.ado.com.mx/"
@@ -183,15 +184,25 @@ class ADOScraper:
 
     def get_containers(self, travel_date, general_origin):
         """Fetch and parse trip containers, extracting the relevant information"""
-        try:
-            trip_containers = self.driver.find_elements(By.CLASS_NAME, "trip-info")
-            scraping_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            trips_data = []
-        except Exception as e:
-            print("Error finding container elements...")
-            self.logger.error(f"Error finding container elements: {e}", exc_info=True)
-            raise
+        scraping_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        trips_data = []
 
+        # Wait for the trip cards to render before reading them. Reading
+        # immediately could find 0 containers while the results page is still
+        # loading, which would be silently reported as "no trips".
+        try:
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "trip-info"))
+            )
+        except TimeoutException:
+            self.logger.warning(
+                f"No 'trip-info' containers appeared for '{general_origin}' on "
+                f"{travel_date.strftime('%Y-%m-%d')} (no trips, or results did not load)."
+            )
+            print("No trip containers appeared after waiting...")
+            return trips_data
+
+        trip_containers = self.driver.find_elements(By.CLASS_NAME, "trip-info")
         print(f"Extracting data for {len(trip_containers)} containers...")
 
         # Iterate over the containers to extract the data
@@ -213,7 +224,6 @@ class ADOScraper:
                 ).text.strip()
                 destination_full = end_time_elem.text.replace(arrival_time, "").strip()
 
-                # Split destination into day offset and clean destination
                 day_offset = ""
                 destination = destination_full
                 if "+1 día" in destination_full:
@@ -231,9 +241,7 @@ class ADOScraper:
 
                 trips_data.append(
                     {
-                        "Origin General": general_origin.split(",")[
-                            0
-                        ],  # Extract city name before comma
+                        "Origin General": general_origin.split(",")[0],
                         "Origin": origin,
                         "Destination": destination,
                         "Day Offset": day_offset,
@@ -249,7 +257,7 @@ class ADOScraper:
                             arrival_time,
                             travel_date.strftime("%Y-%m-%d"),
                             scraping_date,
-                        ),  # hash id
+                        ),
                     }
                 )
             except Exception as e:
@@ -311,32 +319,38 @@ class ADOScraper:
 
 
 def scrape_ado(config: Config) -> pd.DataFrame:
-    """
-    Run the full ADO extraction driven by `config`.
-    """
+    """Run the full ADO extraction driven by `config`."""
     output_dir = config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    _setup_file_logging(output_dir)
+    setup_file_logging("ADOScraper", output_dir, "scraping_errors_ADO.log")
 
     routes = config.mobility.routes
     dates = build_travel_dates(config.mobility.start_date, config.mobility.n_days)
 
     scraper = ADOScraper(headless=config.mobility.headless)
+    retryer = build_retryer(scraper.logger)  # retry policy for this run
     output_files = []
 
     for origin, destination in tqdm(routes, desc="Routes"):
         for travel_date in tqdm(
             dates, desc=f"Dates for {origin} to {destination}", leave=False
         ):
-            try:
-                scraper.open_browser()
-                scraper.insert_origin(origin)
-                scraper.insert_destination(destination)
-                scraper.open_date_picker()
-                scraper.insert_date(travel_date)
-                scraper.submit_search_button()
-                trips_data = scraper.get_containers(travel_date, origin)
 
+            def _attempt():
+                """One full attempt with a fresh browser; a retry starts over."""
+                try:
+                    scraper.open_browser()
+                    scraper.insert_origin(origin)
+                    scraper.insert_destination(destination)
+                    scraper.open_date_picker()
+                    scraper.insert_date(travel_date)
+                    scraper.submit_search_button()
+                    return scraper.get_containers(travel_date, origin)
+                finally:
+                    scraper.close_browser()
+
+            try:
+                trips_data = retryer(_attempt)
                 if trips_data:
                     filename = scraper.export_excel(
                         output_dir, trips_data, origin, destination, travel_date
@@ -349,14 +363,13 @@ def scrape_ado(config: Config) -> pd.DataFrame:
                     )
             except Exception as e:
                 print(
-                    f"Error scraping {origin} to {destination} on {travel_date.strftime('%Y-%m-%d')}..."
+                    f"Error scraping {origin} to {destination} on {travel_date.strftime('%Y-%m-%d')}: {e}"
                 )
                 scraper.logger.error(
                     f"Error scraping {origin} - {destination} on {travel_date}: {e}",
                     exc_info=True,
                 )
             finally:
-                scraper.close_browser()
                 time.sleep(10)
 
     final_output = scraper.concatenate_excels(output_dir, output_files)

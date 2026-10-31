@@ -29,6 +29,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from ..cleaning import normalize_missing
 from ..config import Config
 from ..logging_setup import setup_file_logging
+from ..retry_config import build_retryer
 from ..validation import validate_mobility
 from ._dates import build_travel_dates
 
@@ -43,7 +44,6 @@ class OmnibusScraper:
         self.options = Options()
         if headless:
             self.options.add_argument("--headless=new")
-        self.options.add_argument("--window-size=1920,1080")  # wide view
         self.driver = None
         self.wait = None
         self.base_url = "https://www.odm.com.mx/"
@@ -320,32 +320,38 @@ class OmnibusScraper:
 
 
 def scrape_omnibus(config: Config) -> pd.DataFrame:
-    """
-    Run the full Omnibus extraction driven by `config`.
-    """
+    """Run the full Omnibus extraction driven by `config`."""
     output_dir = config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    _setup_file_logging(output_dir)
+    setup_file_logging("OmnibusScraper", output_dir, "scraping_errors_Omnibus.log")
 
     routes = config.mobility.routes
     dates = build_travel_dates(config.mobility.start_date, config.mobility.n_days)
 
     scraper = OmnibusScraper(headless=config.mobility.headless)
+    retryer = build_retryer(scraper.logger)
     output_files = []
 
     for origin, destination in tqdm(routes, desc="Routes"):
         for travel_date in tqdm(
             dates, desc=f"Dates for {origin} to {destination}", leave=False
         ):
-            try:
-                scraper.open_browser()
-                scraper.insert_origin(origin)
-                scraper.insert_destination(destination)
-                scraper.open_date_picker()
-                scraper.insert_date(travel_date)
-                scraper.submit_search_button()
-                trips_data = scraper.get_containers(travel_date, origin, destination)
 
+            def _attempt():
+                """One full attempt with a fresh browser; a retry starts over."""
+                try:
+                    scraper.open_browser()
+                    scraper.insert_origin(origin)
+                    scraper.insert_destination(destination)
+                    scraper.open_date_picker()
+                    scraper.insert_date(travel_date)
+                    scraper.submit_search_button()
+                    return scraper.get_containers(travel_date, origin, destination)
+                finally:
+                    scraper.close_browser()
+
+            try:
+                trips_data = retryer(_attempt)
                 if trips_data:
                     filename = scraper.export_excel(
                         output_dir, trips_data, origin, destination, travel_date
@@ -365,7 +371,6 @@ def scrape_omnibus(config: Config) -> pd.DataFrame:
                     exc_info=True,
                 )
             finally:
-                scraper.close_browser()
                 time.sleep(10)
 
     final_output = scraper.concatenate_excels(output_dir, output_files)

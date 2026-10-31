@@ -3,6 +3,11 @@
 Extracts georeferenced hotel coordinates from Booking.com for the cities and
 check-in date given in the configuration, and writes one .xlsx file per city
 plus a consolidated file.
+
+Booking's date picker only renders as the two-pane calendar on a wide
+viewport; a narrow window shows a single-pane calendar the date logic
+does not handle. The bus scrapers deliberately use the default window,
+because a wide window makes ADO serve a different results layout.
 """
 
 from __future__ import annotations
@@ -31,6 +36,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from ..cleaning import normalize_missing
 from ..logging_setup import setup_file_logging
+from ..retry_config import build_retryer
 from ..validation import validate_accommodation
 
 PLATFORM = "booking"
@@ -44,7 +50,8 @@ class BookingScraper:
         self.options = Options()
         if headless:
             self.options.add_argument("--headless=new")
-        self.options.add_argument("--window-size=1920,1080")  # wide view
+        # wide view
+        self.options.add_argument("--window-size=1920,1080")
         self.stay_nights = stay_nights
         self.driver = webdriver.Chrome(
             service=Service(ChromeDriverManager().install()), options=self.options
@@ -612,12 +619,10 @@ class BookingScraper:
 
 
 def scrape_booking(config: Config) -> pd.DataFrame:
-    """
-    Run the full Booking extraction driven by `config`.
-    """
+    """Run the full Booking extraction driven by `config`."""
     output_dir = config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    _setup_file_logging(output_dir)
+    setup_file_logging("BookingScraper", output_dir, "scraping_errors_Booking.log")
 
     cities = config.accommodation.cities
     # Accommodation uses a single check-in date (not a range like mobility).
@@ -627,30 +632,42 @@ def scrape_booking(config: Config) -> pd.DataFrame:
         headless=config.accommodation.headless,
         stay_nights=config.accommodation.stay_nights,
     )
+    retryer = build_retryer(scraper.logger)
     output_files = []
 
     for destination in tqdm(cities, desc="Cities"):
         for travel_date in tqdm(dates, desc=f"Dates for {destination}", leave=False):
+
+            def _attempt():
+                """One full attempt with a fresh browser; a retry starts over.
+
+                Returns the results list plus the check-in/check-out dates, which
+                export_excel needs.
+                """
+                try:
+                    scraper.open_browser()
+                    scraper.close_popup()
+                    scraper.insert_destination(destination)
+                    scraper.open_date_picker()
+                    checkin_date, checkout_date = scraper.insert_date(travel_date)
+                    scraper.submit_search_button()
+                    scraper.close_popup()
+                    scraper.submit_button_map()
+
+                    # Extract bounding box and pan through sub-areas
+                    bbox = scraper.extract_bounding_box()
+                    map_captured = scraper.capture_map_instance()
+                    if bbox and map_captured:
+                        sub_boxes = scraper.subdivide_bounding_box(bbox, grid_size=5)
+                        scraper.pan_map_to_bounds(sub_boxes)
+
+                    trips_data_list = scraper.get_containers(travel_date, destination)
+                    return trips_data_list, checkin_date, checkout_date
+                finally:
+                    scraper.close_browser()
+
             try:
-                scraper.open_browser()
-                scraper.close_popup()
-                scraper.insert_destination(destination)
-                scraper.open_date_picker()
-                checkin_date, checkout_date = scraper.insert_date(travel_date)
-                scraper.submit_search_button()
-                scraper.close_popup()
-                scraper.submit_button_map()
-
-                # Extract bounding box and pan through sub-areas
-                bbox = scraper.extract_bounding_box()
-                map_captured = scraper.capture_map_instance()
-
-                if bbox and map_captured:
-                    sub_boxes = scraper.subdivide_bounding_box(bbox, grid_size=5)
-                    scraper.pan_map_to_bounds(sub_boxes)
-
-                trips_data_list = scraper.get_containers(travel_date, destination)
-
+                trips_data_list, checkin_date, checkout_date = retryer(_attempt)
                 print(f"Size of requests: {len(trips_data_list)}")
 
                 if trips_data_list:
@@ -672,7 +689,6 @@ def scrape_booking(config: Config) -> pd.DataFrame:
                     f"Error scraping {destination} on {travel_date}: {e}", exc_info=True
                 )
             finally:
-                scraper.close_browser()
                 time.sleep(10)
 
     final_output = scraper.concatenate_excels(output_dir, output_files)
