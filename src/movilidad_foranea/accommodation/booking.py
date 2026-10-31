@@ -23,6 +23,7 @@ from pathlib import Path
 import brotli
 import pandas as pd
 from pandera.errors import SchemaErrors
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
@@ -523,6 +524,13 @@ class BookingScraper:
                         print("Could not print response headers...")
                         self.logger.error("Could not print response headers.")
                     continue
+
+        #
+        if not all_responses:
+            self.logger.warning(
+                f"No GraphQL results captured for '{destination}' on {travel_date} "
+                "(no hotels, or the map/GraphQL capture did not complete)."
+            )
 
         return all_responses
 

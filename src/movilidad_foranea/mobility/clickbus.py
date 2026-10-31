@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 from pandera.errors import SchemaErrors
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -206,18 +207,26 @@ class ClickbusScraper:
 
     def get_containers(self, travel_date, general_origin):
         """Fetch and parse trip containers, extracting the relevant information"""
-        try:
-            trip_containers = self.driver.find_elements(
-                By.CSS_SELECTOR, "div.detail-wrap"
-            )
-            scraping_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            trips_data = []
-            print(f"Found {len(trip_containers)} trip containers")
-        except Exception as e:
-            print("Error finding container elements...")
-            self.logger.error(f"Error finding container elements: {e}", exc_info=True)
-            raise
 
+        scraping_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        trips_data = []
+
+        try:
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.detail-wrap"))
+            )
+        except TimeoutException:
+            self.logger.warning(
+                f"No trip containers appeared for '{general_origin}' on "
+                f"{travel_date.strftime('%Y-%m-%d')} (no trips, or results did not load)."
+            )
+            print("No trip containers appeared after waiting...")
+            return trips_data
+
+        trip_containers = self.driver.find_elements(By.CSS_SELECTOR, "div.detail-wrap")
+        print(f"Found {len(trip_containers)} trip containers")
+
+        #
         for trip in trip_containers:
             try:
                 # Bus company
