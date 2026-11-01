@@ -186,8 +186,14 @@ After the run finishes, the standardized results are in
 
 ## Outputs
 
-Each platform writes into its own subdirectory of `output_dir`, so results never
-mix between platforms:
+Each platform's consolidated results are written in **two formats**: an Excel
+file (`*_combined.xlsx`) for convenience, and a CSV file (`*_combined.csv`) as an
+open, machine-readable format better suited to reproducible analysis. The per-route/date files are written as Excel only, since they are intermediate staging files.
+
+Before each batch is written, it is validated against a schema (required columns,
+date and id formats, and valid coordinate ranges for hotels). Any issues are
+recorded in the platform's log without interrupting the run, so data-quality
+problems are visible rather than silent.
 
 ```
 output/
@@ -238,13 +244,6 @@ is included to document the complete, reproducible workflow:
   calendar components) may break extraction and require updating the
   corresponding module. This is inherent to web scraping and should be expected
   over time.
-- **BusBud is blocked by anti-bot protection.** BusBud was scrapable when this 
-  project began, but the site has since deployed Cloudflare bot management, 
-  which detects the automated browser through its fingerprint and behaviour and 
-  blocks access. The busbud module is retained and works where no such protection 
-  is present, but automated extraction from BusBud is no longer reliable. This 
-  is an example of the temporal fragility of web sources: a source that works 
-  today may be gated tomorrow.
 - **City naming is platform-specific.** The same city must often be written
   differently on each platform, and must be verified manually (see
   *Configuration*).
@@ -258,6 +257,20 @@ is included to document the complete, reproducible workflow:
 - **Not for commercial use.** This software is intended for academic research.
   It includes systematic wait times to avoid overloading the consulted servers
   and should be used responsibly and in accordance with each platform's terms.
+- **BusBud is blocked by anti-bot protection.** BusBud was scrapable when this
+  project began, but the site has since deployed Cloudflare bot management,
+  which detects the automated browser through its fingerprint and behaviour and
+  blocks access. The `busbud` module is retained and works where no such
+  protection is present, but automated extraction from BusBud is no longer
+  reliable. This illustrates the temporal fragility of web sources: a source
+  that works today may be gated tomorrow. BusBud is a multi-carrier aggregator,
+  so its routes partly overlap with those available from ADO and ClickBus.
+- **The results layout can depend on the browser window size.** Some sites
+  render a different page layout at different widths. The Booking scraper needs
+  a wide window (set automatically) for its two-pane date picker, while the bus
+  scrapers deliberately use the default window, because a wide window makes ADO
+  serve a results layout the extraction does not recognise. Changing a scraper's
+  window size can therefore break it.
 ---
 
 ## License
