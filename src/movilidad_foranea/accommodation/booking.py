@@ -615,7 +615,11 @@ class BookingScraper:
             all_dfs = [pd.read_excel(file, engine="openpyxl") for file in output_files]
             combined_df = pd.concat(all_dfs, ignore_index=True)
             final_output = Path(output_dir) / "Booking_trips_combined.xlsx"
+
+            # Export to excel and csv
             combined_df.to_excel(final_output, index=False, engine="openpyxl")
+            csv_output = final_output.with_suffix(".csv")
+            combined_df.to_csv(csv_output, index=False)
 
             print(f"Concatenated {len(output_files)} files into {final_output}")
             return final_output

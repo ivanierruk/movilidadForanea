@@ -416,10 +416,16 @@ class BusBudScraper:
             combined_df.drop_duplicates(
                 subset="id", inplace=True
             )  # Drop duplicated IDs
+
+            # Export to excel and csv
             combined_df.to_excel(final_output, index=False, engine="openpyxl")
+            csv_output = final_output.with_suffix(".csv")
+            combined_df.to_csv(csv_output, index=False)
+
             print(f"Data without duplicates: {combined_df.shape}")
             print(f"Concatenated {len(output_files)} files into {final_output}")
             return final_output
+
         except Exception as e:
             print("Error concatenating all files...")
             logging.getLogger("BusBudScraper").error(
